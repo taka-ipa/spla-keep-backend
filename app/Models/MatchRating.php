@@ -14,6 +14,9 @@ class MatchRating extends Model
     /** @use HasFactory<\Database\Factories\MatchRatingFactory> */
     use HasFactory;
 
+    // 許可する評価記号。バリデーションやテストデータ生成で使い回す唯一の定義元
+    public const RATINGS = ['◎', '○', '△', '×', '-'];
+
     public function match(): BelongsTo
     {
         return $this->belongsTo(GameMatch::class, 'match_id');

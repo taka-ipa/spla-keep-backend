@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Models\MatchRating;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -43,7 +44,7 @@ class StoreMatchWithRatingsRequest extends FormRequest
                     fn ($query) => $query->where('user_id', $this->user()->id)
                 ),
             ],
-            'ratings.*.rating' => ['required', Rule::in(['○', '△', '×', '-'])],
+            'ratings.*.rating' => ['required', Rule::in(MatchRating::RATINGS)],
         ];
     }
 }

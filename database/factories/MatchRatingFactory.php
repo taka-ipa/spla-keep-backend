@@ -22,7 +22,7 @@ class MatchRatingFactory extends Factory
         return [
             'match_id' => GameMatch::factory(),
             'task_id' => Task::factory(),
-            'rating' => fake()->randomElement(['○', '△', '×', '-']),
+            'rating' => fake()->randomElement(MatchRating::RATINGS),
         ];
     }
 }

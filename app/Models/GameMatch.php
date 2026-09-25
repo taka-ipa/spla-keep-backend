@@ -14,7 +14,7 @@ class GameMatch extends Model
     /** @use HasFactory<\Database\Factories\GameMatchFactory> */
     use HasFactory;
 
-    // クラス名はGameMatchだが、テーブル名はmatch予約語を避けつつ実体に合わせてmatchesにする
+    // クラス名はGameMatchだが、テーブル名はmatch予約語を避けつつ実体に合わせてmatchesにする。
     protected $table = 'matches';
 
     protected function casts(): array

@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\MatchController;
 use App\Http\Controllers\Api\MatchesWithRatingsController;
 use App\Http\Controllers\Api\TaskController;
 use Illuminate\Support\Facades\Route;
@@ -18,4 +19,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/tasks/{task}', [TaskController::class, 'destroy']);
 
     Route::post('/matches-with-ratings', [MatchesWithRatingsController::class, 'store']);
+
+    Route::get('/matches', [MatchController::class, 'index']);
+    Route::get('/matches/{match}', [MatchController::class, 'show']);
+    Route::patch('/matches/{match}', [MatchController::class, 'update']);
 });

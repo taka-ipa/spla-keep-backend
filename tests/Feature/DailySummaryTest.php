@@ -41,6 +41,21 @@ it('counts wins, losses and win rate per day, ignoring matches without a result'
         ->assertJsonPath('days.6.win_rate', 66.7);
 });
 
+it('returns totals across the whole 7-day window', function () {
+    $user = User::factory()->create();
+
+    GameMatch::factory()->for($user)->create(['is_win' => true, 'created_at' => now()]);
+    GameMatch::factory()->for($user)->create(['is_win' => true, 'created_at' => now()->subDays(3)]);
+    GameMatch::factory()->for($user)->create(['is_win' => false, 'created_at' => now()->subDays(5)]);
+
+    $response = $this->actingAs($user)->getJson('/api/daily-summary');
+
+    $response->assertJsonPath('totals.matches', 3)
+        ->assertJsonPath('totals.wins', 2)
+        ->assertJsonPath('totals.losses', 1)
+        ->assertJsonPath('totals.win_rate', 66.7);
+});
+
 it('groups matches by JST date, not UTC date', function () {
     $user = User::factory()->create();
 

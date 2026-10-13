@@ -39,6 +39,7 @@ class DailySummaryController extends Controller
 
         return response()->json([
             'range' => ['from' => $from->toDateString(), 'to' => $today->toDateString()],
+            'totals' => $this->matchStats($matches),
             'days' => $days,
         ]);
     }

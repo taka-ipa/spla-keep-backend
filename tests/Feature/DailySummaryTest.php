@@ -78,6 +78,23 @@ it('counts ratings per day and in totals, excluding "-"', function () {
     expect($response->json('totals.ratings'))->toBe(['◎' => 2, '○' => 0, '△' => 0, '×' => 1]);
 });
 
+it('returns per-mode breakdown ordered by match count', function () {
+    $user = User::factory()->create();
+
+    GameMatch::factory()->for($user)->create(['mode' => 'オープン', 'is_win' => true, 'created_at' => now()]);
+    GameMatch::factory()->for($user)->create(['mode' => 'Xマッチ', 'is_win' => true, 'created_at' => now()]);
+    GameMatch::factory()->for($user)->create(['mode' => 'Xマッチ', 'is_win' => false, 'created_at' => now()]);
+
+    $response = $this->actingAs($user)->getJson('/api/daily-summary');
+
+    $response->assertJsonCount(2, 'modes')
+        ->assertJsonPath('modes.0.mode', 'Xマッチ')
+        ->assertJsonPath('modes.0.matches', 2)
+        ->assertJsonPath('modes.0.win_rate', 50)
+        ->assertJsonPath('modes.1.mode', 'オープン')
+        ->assertJsonPath('modes.1.win_rate', 100);
+});
+
 it('groups matches by JST date, not UTC date', function () {
     $user = User::factory()->create();
 

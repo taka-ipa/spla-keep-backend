@@ -43,7 +43,25 @@ class DailySummaryController extends Controller
             'range' => ['from' => $from->toDateString(), 'to' => $today->toDateString()],
             'totals' => $this->summarize($matches),
             'days' => $days,
+            'modes' => $this->modeStats($matches),
         ]);
+    }
+
+    /**
+     * モード別の内訳。modeが未設定の試合は含めない。試合数の多い順
+     *
+     * @param  Collection<int, GameMatch>  $matches
+     * @return list<array<string, mixed>>
+     */
+    private function modeStats(Collection $matches): array
+    {
+        return $matches
+            ->filter(fn (GameMatch $match) => $match->mode !== null)
+            ->groupBy('mode')
+            ->map(fn (Collection $group, string $mode) => ['mode' => $mode] + $this->matchStats($group))
+            ->sortByDesc('matches')
+            ->values()
+            ->all();
     }
 
     /**

@@ -1,6 +1,8 @@
 <?php
 
 use App\Models\GameMatch;
+use App\Models\MatchRating;
+use App\Models\Task;
 use App\Models\User;
 use Illuminate\Support\Carbon;
 
@@ -54,6 +56,26 @@ it('returns totals across the whole 7-day window', function () {
         ->assertJsonPath('totals.wins', 2)
         ->assertJsonPath('totals.losses', 1)
         ->assertJsonPath('totals.win_rate', 66.7);
+});
+
+it('counts ratings per day and in totals, excluding "-"', function () {
+    $user = User::factory()->create();
+    $taskA = Task::factory()->for($user)->create();
+    $taskB = Task::factory()->for($user)->create();
+
+    $today = GameMatch::factory()->for($user)->create(['created_at' => now()]);
+    MatchRating::factory()->for($today, 'match')->create(['task_id' => $taskA->id, 'rating' => '◎']);
+    MatchRating::factory()->for($today, 'match')->create(['task_id' => $taskB->id, 'rating' => '-']);
+
+    $earlier = GameMatch::factory()->for($user)->create(['created_at' => now()->subDays(2)]);
+    MatchRating::factory()->for($earlier, 'match')->create(['task_id' => $taskA->id, 'rating' => '◎']);
+    MatchRating::factory()->for($earlier, 'match')->create(['task_id' => $taskB->id, 'rating' => '×']);
+
+    $response = $this->actingAs($user)->getJson('/api/daily-summary');
+
+    expect($response->json('days.6.ratings'))->toBe(['◎' => 1, '○' => 0, '△' => 0, '×' => 0]);
+    expect($response->json('days.4.ratings'))->toBe(['◎' => 1, '○' => 0, '△' => 0, '×' => 1]);
+    expect($response->json('totals.ratings'))->toBe(['◎' => 2, '○' => 0, '△' => 0, '×' => 1]);
 });
 
 it('groups matches by JST date, not UTC date', function () {

@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\DailySummaryController;
 use App\Http\Controllers\Api\MatchController;
 use App\Http\Controllers\Api\MatchesWithRatingsController;
 use App\Http\Controllers\Api\TaskController;
@@ -23,4 +24,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/matches', [MatchController::class, 'index']);
     Route::get('/matches/{match}', [MatchController::class, 'show']);
     Route::patch('/matches/{match}', [MatchController::class, 'update']);
+
+    Route::get('/daily-summary', [DailySummaryController::class, 'index']);
 });

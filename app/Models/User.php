@@ -40,4 +40,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(GameMatch::class);
     }
+
+    public function dailyTaskAssignments(): HasMany
+    {
+        return $this->hasMany(DailyTaskAssignment::class);
+    }
 }

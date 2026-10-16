@@ -149,3 +149,47 @@ it('returns 404 for a slot other than 1 or 2', function () {
     $this->actingAs($user)->putJson('/api/daily-assignments/3', ['task_id' => $task->id])
         ->assertStatus(404);
 });
+
+it('clears a slot and returns 204', function () {
+    $user = User::factory()->create();
+    DailyTaskAssignment::factory()->for($user)->create(['date' => '2026-10-10', 'slot' => 1]);
+    $keep = DailyTaskAssignment::factory()->for($user)->create(['date' => '2026-10-10', 'slot' => 2]);
+
+    $this->actingAs($user)->deleteJson('/api/daily-assignments/1?date=2026-10-10')->assertStatus(204);
+
+    expect(DailyTaskAssignment::count())->toBe(1);
+    expect(DailyTaskAssignment::first()->id)->toBe($keep->id);
+});
+
+it('defaults to today in JST when clearing without a date', function () {
+    $user = User::factory()->create();
+    DailyTaskAssignment::factory()->for($user)->create(['date' => '2026-10-17', 'slot' => 1]);
+    DailyTaskAssignment::factory()->for($user)->create(['date' => '2026-10-16', 'slot' => 1]);
+
+    $this->actingAs($user)->deleteJson('/api/daily-assignments/1')->assertStatus(204);
+
+    expect(DailyTaskAssignment::count())->toBe(1);
+    expect(DailyTaskAssignment::first()->date->toDateString())->toBe('2026-10-16');
+});
+
+it('returns 204 even when the slot is already empty', function () {
+    $user = User::factory()->create();
+
+    $this->actingAs($user)->deleteJson('/api/daily-assignments/1?date=2026-10-10')->assertStatus(204);
+});
+
+it('does not clear another user\'s assignment', function () {
+    $owner = User::factory()->create();
+    $attacker = User::factory()->create();
+    DailyTaskAssignment::factory()->for($owner)->create(['date' => '2026-10-10', 'slot' => 1]);
+
+    $this->actingAs($attacker)->deleteJson('/api/daily-assignments/1?date=2026-10-10')->assertStatus(204);
+
+    expect(DailyTaskAssignment::count())->toBe(1);
+});
+
+it('returns 404 when clearing a slot other than 1 or 2', function () {
+    $user = User::factory()->create();
+
+    $this->actingAs($user)->deleteJson('/api/daily-assignments/3')->assertStatus(404);
+});

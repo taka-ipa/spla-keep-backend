@@ -32,4 +32,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/daily-assignments', [DailyTaskAssignmentController::class, 'index']);
     Route::put('/daily-assignments/{slot}', [DailyTaskAssignmentController::class, 'upsert'])
         ->whereIn('slot', DailyTaskAssignment::SLOTS);
+    Route::delete('/daily-assignments/{slot}', [DailyTaskAssignmentController::class, 'destroy'])
+        ->whereIn('slot', DailyTaskAssignment::SLOTS);
 });

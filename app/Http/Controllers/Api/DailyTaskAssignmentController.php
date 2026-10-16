@@ -77,4 +77,21 @@ class DailyTaskAssignmentController extends Controller
             'memo' => $assignment->memo,
         ], $assignment->wasRecentlyCreated ? 201 : 200);
     }
+
+    // DELETE /api/daily-assignments/{slot}?date=YYYY-MM-DD  （そのスロットの課題を解除。すでに空でも204）
+    public function destroy(Request $request, int $slot)
+    {
+        $validated = $request->validate([
+            'date' => ['nullable', 'date_format:Y-m-d'],
+        ]);
+
+        $date = $validated['date'] ?? Carbon::today(self::TIMEZONE)->toDateString();
+
+        $request->user()->dailyTaskAssignments()
+            ->whereDate('date', $date)
+            ->where('slot', $slot)
+            ->delete();
+
+        return response()->json(null, 204);
+    }
 }

@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\DailyTaskAssignmentController;
 use App\Http\Controllers\Api\MatchController;
 use App\Http\Controllers\Api\MatchesWithRatingsController;
 use App\Http\Controllers\Api\TaskController;
+use App\Models\DailyTaskAssignment;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/register', [AuthController::class, 'register']);
@@ -29,4 +30,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/daily-summary', [DailySummaryController::class, 'index']);
 
     Route::get('/daily-assignments', [DailyTaskAssignmentController::class, 'index']);
+    Route::put('/daily-assignments/{slot}', [DailyTaskAssignmentController::class, 'upsert'])
+        ->whereIn('slot', DailyTaskAssignment::SLOTS);
 });

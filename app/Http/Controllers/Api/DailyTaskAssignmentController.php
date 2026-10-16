@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\UpsertDailyTaskAssignmentRequest;
 use App\Models\DailyTaskAssignment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -44,5 +45,36 @@ class DailyTaskAssignmentController extends Controller
             'date' => $date,
             'assignments' => $slots,
         ]);
+    }
+
+    // PUT /api/daily-assignments/{slot}  （その日のそのスロットに課題を設定。設定済みなら差し替え）
+    public function upsert(UpsertDailyTaskAssignmentRequest $request, int $slot)
+    {
+        $validated = $request->validated();
+        $user = $request->user();
+
+        // dateカラムはSQLiteだと時刻付きで保存されるため、whereDateで日付だけを比較して探す
+        $assignment = $user->dailyTaskAssignments()
+            ->whereDate('date', $validated['date'])
+            ->where('slot', $slot)
+            ->first()
+            ?? $user->dailyTaskAssignments()->make(['date' => $validated['date'], 'slot' => $slot]);
+
+        $assignment->fill([
+            'task_id' => $validated['task_id'],
+            'memo' => $validated['memo'] ?? null,
+        ])->save();
+
+        $assignment->load('task');
+
+        return response()->json([
+            'date' => $assignment->date->toDateString(),
+            'slot' => $assignment->slot,
+            'task' => [
+                'id' => $assignment->task->id,
+                'title' => $assignment->task->title,
+            ],
+            'memo' => $assignment->memo,
+        ], $assignment->wasRecentlyCreated ? 201 : 200);
     }
 }

@@ -65,3 +65,87 @@ it('rejects an invalid date format', function () {
 it('requires authentication', function () {
     $this->getJson('/api/daily-assignments')->assertStatus(401);
 });
+
+it('assigns a task to a slot and returns 201', function () {
+    $user = User::factory()->create();
+    $task = Task::factory()->for($user)->create(['title' => 'エイム練習']);
+
+    $response = $this->actingAs($user)->putJson('/api/daily-assignments/1', [
+        'date' => '2026-10-10',
+        'task_id' => $task->id,
+        'memo' => '30分',
+    ]);
+
+    $response->assertStatus(201)
+        ->assertJsonPath('date', '2026-10-10')
+        ->assertJsonPath('slot', 1)
+        ->assertJsonPath('task.title', 'エイム練習')
+        ->assertJsonPath('memo', '30分');
+
+    expect(DailyTaskAssignment::count())->toBe(1);
+});
+
+it('defaults the date to today in JST when omitted', function () {
+    $user = User::factory()->create();
+    $task = Task::factory()->for($user)->create();
+
+    $this->actingAs($user)->putJson('/api/daily-assignments/2', ['task_id' => $task->id])
+        ->assertStatus(201)
+        ->assertJsonPath('date', '2026-10-17');
+});
+
+it('replaces the task in an already-filled slot and returns 200', function () {
+    $user = User::factory()->create();
+    $old = Task::factory()->for($user)->create();
+    $new = Task::factory()->for($user)->create(['title' => '新しい課題']);
+    DailyTaskAssignment::factory()->for($user)->create(['date' => '2026-10-10', 'slot' => 1, 'task_id' => $old->id]);
+
+    $response = $this->actingAs($user)->putJson('/api/daily-assignments/1', [
+        'date' => '2026-10-10',
+        'task_id' => $new->id,
+    ]);
+
+    $response->assertStatus(200)->assertJsonPath('task.title', '新しい課題');
+    expect(DailyTaskAssignment::count())->toBe(1);
+});
+
+it('rejects the same task in both slots on the same day', function () {
+    $user = User::factory()->create();
+    $task = Task::factory()->for($user)->create();
+    DailyTaskAssignment::factory()->for($user)->create(['date' => '2026-10-10', 'slot' => 1, 'task_id' => $task->id]);
+
+    $this->actingAs($user)->putJson('/api/daily-assignments/2', [
+        'date' => '2026-10-10',
+        'task_id' => $task->id,
+    ])->assertStatus(422)->assertJsonValidationErrors('task_id');
+});
+
+it('allows the same task in the same slot on different days', function () {
+    $user = User::factory()->create();
+    $task = Task::factory()->for($user)->create();
+    DailyTaskAssignment::factory()->for($user)->create(['date' => '2026-10-10', 'slot' => 1, 'task_id' => $task->id]);
+
+    $this->actingAs($user)->putJson('/api/daily-assignments/1', [
+        'date' => '2026-10-11',
+        'task_id' => $task->id,
+    ])->assertStatus(201);
+});
+
+it('rejects another user\'s task and inactive tasks', function () {
+    $user = User::factory()->create();
+    $othersTask = Task::factory()->create();
+    $inactive = Task::factory()->for($user)->create(['is_active' => false]);
+
+    $this->actingAs($user)->putJson('/api/daily-assignments/1', ['task_id' => $othersTask->id])
+        ->assertStatus(422)->assertJsonValidationErrors('task_id');
+    $this->actingAs($user)->putJson('/api/daily-assignments/1', ['task_id' => $inactive->id])
+        ->assertStatus(422)->assertJsonValidationErrors('task_id');
+});
+
+it('returns 404 for a slot other than 1 or 2', function () {
+    $user = User::factory()->create();
+    $task = Task::factory()->for($user)->create();
+
+    $this->actingAs($user)->putJson('/api/daily-assignments/3', ['task_id' => $task->id])
+        ->assertStatus(404);
+});

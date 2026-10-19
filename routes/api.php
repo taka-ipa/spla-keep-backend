@@ -16,6 +16,8 @@ Route::post('/login', [AuthController::class, 'login']);
 // メールの連打による迷惑送信を防ぐため、IPごとに1分間に6回まで
 Route::post('/forgot-password', [PasswordResetController::class, 'sendResetLink'])
     ->middleware('throttle:6,1');
+Route::post('/reset-password', [PasswordResetController::class, 'reset'])
+    ->middleware('throttle:6,1');
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', [AuthController::class, 'me']);

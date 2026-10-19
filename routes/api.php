@@ -5,12 +5,17 @@ use App\Http\Controllers\Api\DailySummaryController;
 use App\Http\Controllers\Api\DailyTaskAssignmentController;
 use App\Http\Controllers\Api\MatchController;
 use App\Http\Controllers\Api\MatchesWithRatingsController;
+use App\Http\Controllers\Api\PasswordResetController;
 use App\Http\Controllers\Api\TaskController;
 use App\Models\DailyTaskAssignment;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
+
+// メールの連打による迷惑送信を防ぐため、IPごとに1分間に6回まで
+Route::post('/forgot-password', [PasswordResetController::class, 'sendResetLink'])
+    ->middleware('throttle:6,1');
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', [AuthController::class, 'me']);

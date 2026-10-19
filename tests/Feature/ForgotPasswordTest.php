@@ -51,3 +51,23 @@ it('is rate limited per IP', function () {
 
     $this->postJson('/api/forgot-password', ['email' => 'user7@example.com'])->assertStatus(429);
 });
+
+it('renders the reset email in Japanese', function () {
+    app()->setLocale('ja');
+    config(['app.name' => 'Spla Keep', 'app.frontend_url' => 'https://app.example.test']);
+    $user = User::factory()->create(['name' => 'さけべろ', 'email' => 'sakebero@example.com']);
+
+    $mail = (new ResetPassword('test-token'))->toMail($user);
+    $html = (string) $mail->render();
+
+    expect($mail->subject)->toBe('【Spla Keep】パスワード再設定のご案内');
+    expect($mail->greeting)->toBe('さけべろ さん');
+    expect($mail->actionText)->toBe('パスワードを再設定する');
+    expect($html)
+        ->toContain('パスワード再設定のリクエストを受け付けました')
+        ->toContain('このリンクの有効期限は60分です')
+        ->toContain('ボタンをクリックできない場合は')
+        ->toContain('https://app.example.test/reset-password?token=test-token')
+        ->not->toContain('Regards')
+        ->not->toContain('Hello');
+});

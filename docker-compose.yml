@@ -1,0 +1,23 @@
+services:
+  db:
+    image: mysql:8.0
+    env_file: .env.docker.db
+    volumes:
+      - db_data:/var/lib/mysql
+    # ホストにはポートを公開しない。backendからDockerネットワーク内で db:3306 として接続する
+    healthcheck:
+      # $$ はcompose側で展開せず、コンテナ内の環境変数として評価させるためのエスケープ
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u root -p\"$$MYSQL_ROOT_PASSWORD\" --silent"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  backend:
+    build: .
+    env_file: .env.docker
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  db_data:

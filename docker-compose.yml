@@ -19,5 +19,15 @@ services:
       db:
         condition: service_healthy
 
+  nginx:
+    image: nginx:stable-alpine
+    volumes:
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    ports:
+      # ローカルでは自分のPCからだけ接続できるよう127.0.0.1に限定して公開する
+      - "127.0.0.1:8080:80"
+    depends_on:
+      - backend
+
 volumes:
   db_data:
